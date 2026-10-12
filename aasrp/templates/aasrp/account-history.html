@@ -1,0 +1,37 @@
+{% extends "aasrp/base.html" %}
+{% load i18n humanize %}
+{% block page_title %}{% translate "Account SRP history" %}{% endblock %}
+{% block aasrp_body %}
+<h2>{% translate "Account SRP history" %}</h2>
+<form method="get" action="{% url 'aasrp:account_search' %}" class="mb-3">
+    <label for="account-search" class="form-label">{% translate "Search by main, linked alt or username" %}</label>
+    <div class="input-group">
+        <input id="account-search" name="q" value="{{ query }}" maxlength="254" class="form-control" required>
+        <button class="btn btn-primary" type="submit">{% translate "Search" %}</button>
+    </div>
+</form>
+<p>{% translate "Approved SRP totals include all requests submitted by the Auth account across all fleets and characters. Approval does not confirm payment." %}</p>
+{% if account %}
+    <h3>{{ account.profile.main_character.character_name|default:account.username }}</h3>
+    <p>{% translate "Approved SRP" %}: <strong>{{ approved_total|intcomma }} ISK</strong></p>
+    <h4>{% translate "Currently linked characters" %}</h4>
+    <ul>{% for ownership in characters %}<li>{{ ownership.character.character_name }} — {{ ownership.character.corporation_name }}</li>{% empty %}<li>{% translate "No linked characters" %}</li>{% endfor %}</ul>
+    <div class="table-responsive"><table class="table table-striped">
+        <thead><tr><th>{% translate "Date" %}</th><th>{% translate "Character" %}</th><th>{% translate "Ship" %}</th><th>{% translate "Fleet" %}</th><th>{% translate "Status" %}</th><th>{% translate "Payout amount" %}</th><th>{% translate "Loss" %}</th></tr></thead>
+        <tbody>{% for item in history %}<tr>
+            <td>{{ item.post_time|date:"Y-m-d H:i" }}</td><td>{{ item.character.character_name|default:"—" }}</td><td>{{ item.ship.name|default:"—" }}</td>
+            <td><a href="{% url 'aasrp:view_srp_requests' item.srp_link.srp_code %}">{{ item.srp_link.srp_name }}</a></td>
+            <td>{{ item.get_request_status_display }}</td><td>{{ item.payout_amount|intcomma }} ISK</td><td><a href="{{ item.killboard_link }}" rel="noopener noreferrer">{% translate "Killmail" %}</a></td>
+        </tr>{% empty %}<tr><td colspan="7">{% translate "No SRP requests for this account" %}</td></tr>{% endfor %}</tbody>
+    </table></div>
+    {% if history.has_previous %}<a href="?page={{ history.previous_page_number }}">{% translate "Previous" %}</a>{% endif %}
+    <span>{{ history.number }} / {{ history.paginator.num_pages }}</span>
+    {% if history.has_next %}<a href="?page={{ history.next_page_number }}">{% translate "Next" %}</a>{% endif %}
+{% elif query %}
+    <table class="table table-striped"><thead><tr><th>{% translate "Main" %}</th><th>{% translate "Approved SRP" %}</th></tr></thead>
+    <tbody>{% for row in accounts %}<tr><td><a href="{% url 'aasrp:account_history' row.user.pk %}">{{ row.user.profile.main_character.character_name|default:row.user.username }}</a></td><td>{{ row.total|intcomma }} ISK</td></tr>{% empty %}<tr><td colspan="2">{% translate "No matching accounts" %}</td></tr>{% endfor %}</tbody></table>
+    {% if page.has_previous %}<a href="?q={{ query|urlencode }}&amp;page={{ page.previous_page_number }}">{% translate "Previous" %}</a>{% endif %}
+    <span>{{ page.number }} / {{ page.paginator.num_pages }}</span>
+    {% if page.has_next %}<a href="?q={{ query|urlencode }}&amp;page={{ page.next_page_number }}">{% translate "Next" %}</a>{% endif %}
+{% endif %}
+{% endblock %}

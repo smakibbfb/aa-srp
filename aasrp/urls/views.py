@@ -11,8 +11,11 @@ from django.urls import path
 
 # AA SRP
 from aasrp.views import general
+from aasrp.views.accounts import account_history
 
 urls = [
+    path("accounts/", account_history, name="account_search"),
+    path("accounts/<int:user_id>/", account_history, name="account_history"),
     # Route for viewing SRP links
     path(route="", view=general.srp_links, name="srp_links"),
     # Route for viewing all SRP links

@@ -24,6 +24,13 @@
 {% include "aasrp/partials/navigation/top-navigation-item.html" with url=url_own_srp_requests navactive=navactive_own_srp_requests title=l10n_own_srp_requests fa_icon="fa-solid fa-hand-holding-dollar" %}
 
 <!-- My settings -->
+{% if perms.aasrp.manage_srp or perms.aasrp.manage_srp_requests %}
+    {% url 'aasrp:account_search' as url_account_search %}
+    {% navactive request 'aasrp:account_search aasrp:account_history' as navactive_accounts %}
+    {% translate "Account SRP history" as l10n_accounts %}
+    {% include "aasrp/partials/navigation/top-navigation-item.html" with url=url_account_search navactive=navactive_accounts title=l10n_accounts fa_icon="fa-solid fa-users" %}
+{% endif %}
+
 {% url 'aasrp:user_settings' as url_user_settings %}
 {% navactive request 'aasrp:user_settings' as navactive_user_settings %}
 {% translate "My settings" as l10n_user_settings %}
