@@ -94,6 +94,39 @@ class TestAccountHistory(BaseTestCase):
             404,
         )
 
+    def test_detail_total_matches_search_across_history_pages(self):
+        """The total must include every approved request, regardless of ordering."""
+        for _ in range(51):
+            SrpRequest.objects.create(
+                creator=self.member,
+                character=self.alt,
+                srp_link=self.link,
+                request_status=SrpRequest.Status.APPROVED,
+                payout_amount=150_000_000,
+            )
+        self.client.force_login(self.staff)
+        search = self.client.get(
+            reverse("aasrp:account_search"), {"q": "Report Main"}
+        )
+        expected = 51 * 150_000_000 + 300
+        self.assertEqual(search.context["accounts"][0]["total"], expected)
+        for page in [1, 2]:
+            detail = self.client.get(
+                reverse("aasrp:account_history", args=[self.member.pk]),
+                {"page": page},
+            )
+            self.assertEqual(detail.context["approved_total"], expected)
+
+    def test_detail_total_is_zero_without_approved_requests(self):
+        SrpRequest.objects.filter(
+            creator=self.member, request_status=SrpRequest.Status.APPROVED
+        ).delete()
+        self.client.force_login(self.staff)
+        response = self.client.get(
+            reverse("aasrp:account_history", args=[self.member.pk])
+        )
+        self.assertEqual(response.context["approved_total"], 0)
+
     def test_empty_search_and_unmatched_search(self):
         self.client.force_login(self.staff)
         response = self.client.get(reverse("aasrp:account_search"))

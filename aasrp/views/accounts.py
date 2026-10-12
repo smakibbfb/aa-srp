@@ -61,20 +61,15 @@ def account_history(request, user_id=None):
             .select_related("character", "ship", "srp_link")
             .order_by("-post_time", "-pk")
         )
-        totals = requests.values("request_status").annotate(total=Sum("payout_amount"))
+        approved_total = requests.filter(
+            request_status=SrpRequest.Status.APPROVED
+        ).aggregate(total=Sum("payout_amount"))["total"] or 0
         context.update(
             account=account,
             characters=account.character_ownerships.select_related(
                 "character"
             ).order_by("character__character_name"),
-            approved_total=next(
-                (
-                    row["total"]
-                    for row in totals
-                    if row["request_status"] == SrpRequest.Status.APPROVED
-                ),
-                0,
-            ),
+            approved_total=approved_total,
             history=Paginator(requests, 50).get_page(request.GET.get("page")),
         )
     return render(request, "aasrp/account-history.html", context)
